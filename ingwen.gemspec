@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'require_tree'
-  s.version     = '0.1.2'
+  s.version     = '0.1.3'
   s.date        = '2018-01-16'
   s.summary     = "*.rb file loader!"
   s.description = "require all files in given relative path!"
