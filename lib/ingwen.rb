@@ -1,18 +1,27 @@
 module Kernel
-  def require_tree path
-    rb_files_queue = []  
-    parse_path path, Dir.pwd, rb_files_queue
-    try_and_error rb_files_queue
+  def require_tree path, opt={}
+    force       = opt[:force] || false
+    caller_file = caller_locations.first.absolute_path
+    caller_path = caller_file + '/..'
+    if force
+      rb_files_queue = []
+      parse_path_f path, caller_path, rb_files_queue
+      rb_files_queue.delete caller_file
+      try_and_error rb_files_queue 
+    else
+
+    end
   end
 
   private
-  def parse_path path, base, queue
-    Dir["#{base}/#{path}/*"].each {|path| 
+  def parse_path_f path, base, queue
+    full_path = path == '.' ? "#{base}/*" : "#{base}/#{path}/*"
+    Dir[full_path].each {|sym| 
       begin
-        if File.directory? path
-          parse_path '.', path, queue
-        elsif path =~ /\.rb$/
-          queue << path 
+        if File.directory? sym
+          parse_path_f '.', sym, queue
+        elsif sym =~ /\.rb$/
+          queue << sym 
         end
       end
     }
