@@ -1,31 +1,48 @@
+
 module Kernel
   def require_tree path, opt={}
     force       = opt[:force] || false
     debug       = opt[:debug] || false
     caller_file = caller_locations.first.absolute_path
     caller_path = caller_file + '/..'
-    if force
-      rb_files_queue = []
-      parse_path_f path, caller_path, rb_files_queue
-      rb_files_queue.delete caller_file
-      try_and_error rb_files_queue, debug: debug
-    else
-
-    end
+    rb_files_queue = []
+    parse_path_f path: path, base: caller_path, queue: rb_files_queue, force: force
+    rb_files_queue.delete caller_file
+    try_and_error rb_files_queue, debug: debug
   end
 
   private
-  def parse_path_f path, base, queue
+  def parse_path_f opt={}
+    path  = opt[:path]
+    base  = opt[:base]
+    queue = opt[:queue]
+    force = opt[:force]
     full_path = path == '.' ? "#{base}/*" : "#{base}/#{path}/*"
-    Dir[full_path].each {|sym| 
-      begin
-        if File.directory? sym
-          parse_path_f '.', sym, queue
-        elsif sym =~ /\.rb$/
-          queue << sym 
+    if force
+      Dir[full_path].each {|sym| 
+        begin
+          if File.directory? sym
+            parse_path_f path: '.', base: sym, queue: queue
+          elsif sym =~ /\.rb$/
+            queue << sym 
+          end
         end
-      end
-    }
+      }
+    else
+      folders   = []
+      Dir[full_path].each {|sym| 
+        begin
+          if File.directory? sym
+            folders << sym
+          elsif sym =~ /\.rb$/
+            queue << sym 
+          end
+        end
+      }
+      folders.each {|sym| 
+        parse_path_f path: '.', base: sym, queue: queue
+      }
+    end
   end
 
   def try_and_error queue, opt={}
